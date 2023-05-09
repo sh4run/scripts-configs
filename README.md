@@ -87,5 +87,6 @@ An unencrypted tunnel can be established with ncat:
 
 As the traffic is encrypted by the underlying SSS anyway, it doesn't really matter whether the tunnel is encrypted or not. It is interesting in my test, ssh tunnel shows a better performance than ncat tunnel, even with one more encryption/decryption.  
 
-Now most connections on your remote vps are from 127.0.0.1 and there is only one foreigh connection from your local-machine (netstat -pnt). This behavior is different from "proxy-relay" or "tunnel" in clash. In those two cases, you will still observe multiple connections from your local machine.    
+Now most connections on your remote vps are from 127.0.0.1 and there is only one foreigh connection from your local-machine (command: netstat -pnt). This behavior is different from "proxy-relay" or "tunnel" in clash. In those two cases, you will still observe multiple connections from your local machine.    
 
+SOCKS5 is not recommended herer as there is a greeting handshake in socks5 protocol. When a socks5 server is deployed on your vps, this handshake takes place on WAN. This makes socks5 inefficient in connection setup. In protocols like snell/ss, this handshake process is omitted on the WAN side. 
