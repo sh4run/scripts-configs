@@ -50,7 +50,7 @@ Please use this command to check the status:
     
     systemctl status 'sss-client*'
 
-The service name is something like "sss-client-xx.xx.xx.xx.service". "xx.xx.xx.xx" is the server ip that client connects to. If you have multiple sss-server installed on multiple VPS, it is allowed to install multiple sss-clients on the same machine.
+The service name is something like "sss-client-xx.xx.xx.xx.service". "xx.xx.xx.xx" is the server ip that client connects to. If you have multiple sss-servers, you can use this script to install multiple sss-clients on the same machine.
 
 By default, sss-client provides socks5 service on the same port number specified when installing sss-server. You can edit "local_port" in the config file "/etc/sss/sss-client-xx.xx.xx.xx.json" to change it.  Please restart sss-client to make the change take effect.
 
@@ -71,3 +71,21 @@ You can use "sss-uninstall.sh" to remove any SSS component. If multiple sss-clie
     wget https://raw.githubusercontent.com/sh4run/scripts-configs/main/sss-uninstall.sh 
     chmod +x sss-uninstall.sh
     sudo bash ./sss-uninstall.sh
+    
+## SSH tunnel over SSS
+Tests show GFW is likely sensitive to TCP connection establishment. A normal proxy, which handles each request(SOCKS5) separately in different TCP connections, can trigger more GFW inspections & receive more GFW probes. While a proxy working in tunnel mode receives much less probes. 
+
+Say your sss-client listens on port 9080, and other than sss-server, ss or snell server is installed and listens on port 10080 on your remote vps, below command establishes a ssh tunnel from your local-machine:9081 to remote-vps:10080.
+
+    ssh -N -L 0.0.0.0:9081:127.0.0.1:10080 -o ProxyCommand='nc -X 5 -x 127.0.0.1:9080 %h %p' 127.0.0.1
+    
+Now you can configure your ss or snell client to local-machine:9081. 
+
+An unencrypted tunnel can be established with ncat:
+
+    ncat -k -l -p 9081 -c "ncat --proxy 127.0.0.1:9080 --proxy-type socks5 127.0.0.1 10080"
+
+As the traffic is encrypted by the underlying SSS anyway, it doesn't really matter whether the tunnel is encrypted or not. It is interesting in my test, ssh tunnel shows a better performance than ncat tunnel, even with one more encryption/decryption.  
+
+Now most connections on your remote vps are from 127.0.0.1 and there is only one foreigh connection from your local-machine (netstat -pnt). This behavior is different from "proxy-relay" or "tunnel" in clash. In those two cases, you will still observe multiple connections from your local machine.    
+
