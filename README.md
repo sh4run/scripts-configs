@@ -1,3 +1,31 @@
+Table of Contents
+- [SSH tunnel over SSS](https://github.com/sh4run/scripts-configs/main/README.md#ssh-tunnel-over-sss)
+- [SSS Installation](https://github.com/sh4run/scripts-configs/main/README.md#sssscrambled-shadowsocks-installation)
+
+***
+# SSH tunnel over SSS
+*Below content is suitable for any proxy protocol that supports socks5 interface.*
+
+Tests show GFW is likely sensitive to TCP connection establishment. A normal proxy, which handles each request(SOCKS5) separately in different TCP connections, can trigger more GFW inspections & receive more GFW probes. While a proxy working in tunnel mode receives much less probes. 
+
+Say your sss-client listens on port 9080 (local socks5), and other than sss-server, ss or snell server is installed and listens on port 10080 on your remote vps, below command establishes a ssh tunnel from your local-machine:9081 to remote-vps:10080.
+
+    ssh -N -L 0.0.0.0:9081:127.0.0.1:10080 -o ProxyCommand='nc -X 5 -x 127.0.0.1:9080 %h %p' 127.0.0.1
+    
+Now you can configure your ss or snell client to local-machine:9081. 
+
+An unencrypted tunnel can be established with ncat:
+
+    ncat -k -l -p 9081 -c "ncat --proxy 127.0.0.1:9080 --proxy-type socks5 127.0.0.1 10080"
+
+As the traffic is encrypted by the underlying SSS anyway, it doesn't really matter whether the tunnel is encrypted or not. It is interesting in my test, ssh tunnel shows a better performance than ncat tunnel, even with one more encryption/decryption.  
+
+Now most connections on your remote vps are from 127.0.0.1 and there is only one foreign connection from your local-machine (command: netstat -pnt). This behavior is different from "proxy-relay" or "tunnel" in clash. In those two cases, you will still observe multiple connections from your local machine.    
+
+SOCKS5 is not recommended here as there is a greeting handshake in socks5 protocol. When a socks5 server is deployed on your vps, this handshake takes place on WAN. This makes socks5 inefficient in connection setup. In protocols like snell/ss, this handshake process is omitted on the WAN side. 
+
+***
+
 # SSS(Scrambled Shadowsocks) Installation
 There are two components: sss-server and sss-client. sss-server is installed on your vps while sss-client is installed on another linux machine inside GFW, better in your home. sss-client provides a socks5 interface to any actual end devices. Please refer to [Scrambled Shadowsocks](https://github.com/sh4run/sss#sss---scrambled-shadowsocks) for a detailed description of the protocol. 
 
@@ -72,21 +100,4 @@ You can use "sss-uninstall.sh" to remove any SSS component. If multiple sss-clie
     chmod +x sss-uninstall.sh
     sudo bash ./sss-uninstall.sh
     
-## SSH tunnel over SSS
-Tests show GFW is likely sensitive to TCP connection establishment. A normal proxy, which handles each request(SOCKS5) separately in different TCP connections, can trigger more GFW inspections & receive more GFW probes. While a proxy working in tunnel mode receives much less probes. 
 
-Say your sss-client listens on port 9080, and other than sss-server, ss or snell server is installed and listens on port 10080 on your remote vps, below command establishes a ssh tunnel from your local-machine:9081 to remote-vps:10080.
-
-    ssh -N -L 0.0.0.0:9081:127.0.0.1:10080 -o ProxyCommand='nc -X 5 -x 127.0.0.1:9080 %h %p' 127.0.0.1
-    
-Now you can configure your ss or snell client to local-machine:9081. 
-
-An unencrypted tunnel can be established with ncat:
-
-    ncat -k -l -p 9081 -c "ncat --proxy 127.0.0.1:9080 --proxy-type socks5 127.0.0.1 10080"
-
-As the traffic is encrypted by the underlying SSS anyway, it doesn't really matter whether the tunnel is encrypted or not. It is interesting in my test, ssh tunnel shows a better performance than ncat tunnel, even with one more encryption/decryption.  
-
-Now most connections on your remote vps are from 127.0.0.1 and there is only one foreign connection from your local-machine (command: netstat -pnt). This behavior is different from "proxy-relay" or "tunnel" in clash. In those two cases, you will still observe multiple connections from your local machine.    
-
-SOCKS5 is not recommended here as there is a greeting handshake in socks5 protocol. When a socks5 server is deployed on your vps, this handshake takes place on WAN. This makes socks5 inefficient in connection setup. In protocols like snell/ss, this handshake process is omitted on the WAN side. 
