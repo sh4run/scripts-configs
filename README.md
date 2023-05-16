@@ -1,6 +1,6 @@
 Table of Contents
-- [SSH tunnel over SSS](https://github.com/sh4run/scripts-configs/main/README.md#ssh-tunnel-over-sss)
-- [SSS Installation](https://github.com/sh4run/scripts-configs/main/README.md#sssscrambled-shadowsocks-installation)
+- [SSH tunnel over SSS](https://github.com/sh4run/scripts-configs#ssh-tunnel-over-sss)
+- [SSS Installation](https://github.com/sh4run/scripts-configs#sssscrambled-shadowsocks-installation)
 
 ***
 # SSH tunnel over SSS
